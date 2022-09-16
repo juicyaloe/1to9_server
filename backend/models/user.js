@@ -19,7 +19,7 @@ module.exports = class User extends Sequelize.Model {
       },
     }, {
       sequelize,
-      timestamps: false,
+      timestamps: true,
       underscored: false,
       modelName: 'User',
       tableName: 'users',
