@@ -1,0 +1,19 @@
+{
+  "name": "m5-mac",
+  "version": "1.0.0",
+  "description": "front and back",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juicyaloe/m5-mac.git"
+  },
+  "author": "Kmin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/juicyaloe/m5-mac/issues"
+  },
+  "homepage": "https://github.com/juicyaloe/m5-mac#readme"
+}
