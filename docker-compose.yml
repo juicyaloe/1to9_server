@@ -19,8 +19,8 @@ services:
       context: ./backend
       # ./velog/Dockerfile을 사용해서 build
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     volumes:
       - './backend:/backend'
       - '/backend/node_modules'
@@ -35,7 +35,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql/
     ports:
-      - "3306:3306"
+      - "3308:3306"
     env_file:
       - ./.env.prod.db
 volumes:
