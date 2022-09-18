@@ -14,6 +14,9 @@ const User = require('./models/user');
 
 const webSocket = require('./socket');
 
+const indexRouter = require('./routes');
+const loginRouter = require('./routes/login');
+
 // const passportConfig = require('./passport');
 
 // app start
@@ -21,7 +24,7 @@ const app = express();
 app.set('port', process.env.PORT || 8000);
 
 // db connect
-sequelize.sync({ force: true })
+sequelize.sync({ force: false })
   .then(() => {
     console.log('db connect ok');
   })
@@ -50,15 +53,12 @@ app.use(express.urlencoded({ extended: false }));
 // app.use(passport.session());
 
 // routes
-app.use('/api/', async (req, res) => {
-    try {
-        const users = await User.findAll({});
-        res.send(users);
-      }
-    catch (err) {
-        res.send("에러");
-    }
-});
+app.use('/api/', indexRouter);
+app.use('/api/login/', loginRouter);
+
+app.use('/a', (req, res) => {
+  res.send("dkss");
+})
 
 app.use((req, res, next) => {
   const error =  new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
