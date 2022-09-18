@@ -1,10 +1,10 @@
 // import package
 const express = require('express');
 const path = require('path');
-const cookieParser = require('cookie-parser');
-const passport = require('passport');
+// const cookieParser = require('cookie-parser');
+// const passport = require('passport');
 const morgan = require('morgan');
-const session = require('express-session');
+// const session = require('express-session');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -14,14 +14,14 @@ const User = require('./models/user');
 
 const webSocket = require('./socket');
 
-//const passportConfig = require('./passport');
+// const passportConfig = require('./passport');
 
 // app start
 const app = express();
 app.set('port', process.env.PORT || 8000);
 
 // db connect
-sequelize.sync({ force: false })
+sequelize.sync({ force: true })
   .then(() => {
     console.log('db connect ok');
   })
@@ -46,8 +46,8 @@ app.use(express.urlencoded({ extended: false }));
 //     secure: false,
 //   },
 // }));
-//app.use(passport.initialize());
-//app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
 
 // routes
 app.use('/api/', async (req, res) => {
