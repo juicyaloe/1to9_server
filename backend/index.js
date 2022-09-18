@@ -8,12 +8,13 @@ const session = require('express-session');
 const dotenv = require('dotenv');
 dotenv.config();
 
-// import db
+// import files
 const { sequelize } = require('./models');
 const User = require('./models/user');
 
-// import socket
 const webSocket = require('./socket');
+
+//const passportConfig = require('./passport');
 
 // app start
 const app = express();
@@ -45,6 +46,8 @@ app.use(express.urlencoded({ extended: false }));
 //     secure: false,
 //   },
 // }));
+//app.use(passport.initialize());
+//app.use(passport.session());
 
 // routes
 app.use('/api/', async (req, res) => {
