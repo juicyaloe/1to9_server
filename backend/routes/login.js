@@ -1,13 +1,10 @@
 const express = require('express');
 const User = require('../models/user');
+const {registerm, login, myInformation} = require('../token_controller/modules');
 
 const router = express.Router();
 
 router.route('/')
-    .post( async (req, res, next) => {
-        const {id, password} = req.body;
-        res.send({id, password});  
-        console.log("ds");      
-    });
+    .post( myInformation );
 
 module.exports = router;
