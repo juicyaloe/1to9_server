@@ -15,7 +15,7 @@ const User = require('./models/user');
 const webSocket = require('./socket');
 
 const indexRouter = require('./routes');
-const loginRouter = require('./routes/login');
+const profileRouter = require('./routes/profile');
 
 // const passportConfig = require('./passport');
 
@@ -53,8 +53,9 @@ app.use(express.urlencoded({ extended: false }));
 // app.use(passport.session());
 
 // routes
-app.use('/api/', indexRouter);
-app.use('/api/login/', loginRouter);
+app.use('/api/profile', profileRouter);
+app.use('/api', indexRouter);
+
 
 app.use('/a', (req, res) => {
   res.send("dkss");
