@@ -1,10 +1,10 @@
 const express = require('express');
 const User = require('../models/user');
-const {registerm, login, myInformation} = require('../token_controller/modules');
+const {register, login, myInformation} = require('../modules/token_manager');
 
 const router = express.Router();
 
 router.route('/')
-    .post( myInformation );
+    .post( login );
 
 module.exports = router;
