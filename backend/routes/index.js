@@ -6,7 +6,9 @@ const router = express.Router();
 router.route('/')
     .get( async (req, res, next) => {
             try {
-                const users = await User.findAll({});
+                const users = await User.findAll({
+                    attributes: ["id", "email", "nickname"],
+                });
                 res.send(users);
                 console.log("aa");
                 console.log("ss");
