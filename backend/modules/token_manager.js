@@ -3,7 +3,7 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const e = require('express');
 
-exports.register = async (req, res) => {
+exports.register = async (req, res) => { 
     try {
         let temp = await User.findOne({where : {id: req.body.id}})
         if(temp) {
