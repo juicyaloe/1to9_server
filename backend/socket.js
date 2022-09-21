@@ -16,7 +16,7 @@ module.exports = (server) => {
     console.log('새로운 클라이언트 접속', ip);
 
     ws.isAuthorization = false;
-    const userToken = req.url.split('/')[1];
+    const userToken = req.url.split('/')[2];
     
     // 인증 로직
     try {
