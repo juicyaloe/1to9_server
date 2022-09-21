@@ -1,7 +1,8 @@
 const Sequelize = require('sequelize');
 const User = require('./user');
+const Room = require('./room');
 
-const env = process.env.NODE_ENV || 'production';
+const env = process.env.NODE_ENV || 'development';
 const config = require('../config/config')[env];
 const db = {};
 
@@ -11,9 +12,12 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 db.User = User;
+db.Room = Room;
 
 User.init(sequelize);
+Room.init(sequelize);
 
 User.associate(db);
+Room.associate(db);
 
 module.exports = db;
