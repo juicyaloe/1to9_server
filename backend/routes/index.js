@@ -3,18 +3,9 @@ const User = require('../models/user');
 
 const router = express.Router();
 
+const {roomMaker, roomVisiter, roomLeaver, roomDestroyer} = require('../modules/room_manager');
+
 router.route('/')
-    .get( async (req, res, next) => {
-            try {
-                const users = await User.findAll({
-                    attributes: ["id", "email", "nickname"],
-                });
-                res.send(users);
-                console.log("aa");
-                console.log("ss");
-            } catch (err) {
-                console.log("error");
-                res.send(err);
-            }});
+    .post( roomDestroyer );
 
 module.exports = router;

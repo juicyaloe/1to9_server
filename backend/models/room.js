@@ -5,15 +5,15 @@ module.exports = class Room extends Sequelize.Model {
     return super.init({
       name: {
         type: Sequelize.STRING(40),
-        allowNull: true,
+        allowNull: false,
         unique: true,
       },
     }, {
       sequelize,
       timestamps: false,
       underscored: false,
-      modelName: 'User',
-      tableName: 'users',
+      modelName: 'Room',
+      tableName: 'rooms',
       paranoid: false,
       charset: 'utf8',
       collate: 'utf8_general_ci',
