@@ -11,7 +11,7 @@ module.exports = class User extends Sequelize.Model {
       },
       email: {
         type: Sequelize.STRING(40),
-        allowNull: true,
+        allowNull: false,
         unique: true,
       },
       nickname: {
@@ -35,5 +35,7 @@ module.exports = class User extends Sequelize.Model {
     });
   }
 
-  static associate(db) { }
+  static associate(db) {
+    db.User.belongsTo(db.Room, {foreignKey: 'myroom', targetKey: 'id'})
+  }
 };
