@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
-const e = require('express');
 
 exports.register = async (req, res) => { 
     try {
@@ -61,33 +60,34 @@ exports.login = async (req, res) => {
                 message: '등록되지 않은 ID입니다.'
             })
         }
+
+        const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
+        if (!passwordIsValid) {
+            return res.status(401).send({
+                code: 401,
+                error: 'errorPassword',
+                message: "틀린 비밀번호입니다.",
+            });
+        }
+    
+        const token = jwt.sign(
+            {
+                id: user.id,
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: 86400,
+            }
+        );
+    
+        return res.status(200).json({
+            code: 200,
+            accessToken: token,
+        });
+        
     } catch (err) {
         return res.status(500).send("예상치 못한 오류입니다! "+err);
     }
-
-    const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
-    if (!passwordIsValid) {
-        return res.status(401).send({
-            code: 401,
-            error: 'errorPassword',
-            message: "틀린 비밀번호입니다.",
-        });
-    }
-
-    const token = jwt.sign(
-        {
-            id: user.id,
-        },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: 86400,
-        }
-    );
-
-    return res.status(200).json({
-        code: 200,
-        accessToken: token,
-    });
 };
 
 exports.verifyToken = (req, res, next) => {

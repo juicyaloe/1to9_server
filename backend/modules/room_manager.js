@@ -1,221 +1,152 @@
 const User = require('../models/user');
 const Room = require('../models/room');
 
-async function createRoom (_name) {
+exports.roomMaker = async (id, roomname) => {
     try {
-        let temp = await Room.findOne({where : {name: _name}})
+        // 방이 이미 있는지 검사
+        let temp = await Room.findOne({where : {name: roomname}});
         if(temp) {
-            return 400;
+            return ({
+                code: 400,
+                error: 'repeatedRoomname',
+                message: '이미 존재하는 방 이름입니다.'});
         }
 
-        const room = await Room.create({name: _name});  
+        // 방 만들기
+        const room = await Room.create({name: roomname});  
         if (room) {
-            return 201;
-        }
+            // 방 만들기 성공
+            console.log(room);
+            let isUpdated = await User.update({
+                myroom: room.id,
+            }, {
+                where: {id: id},
+            });
+    
+            return ({
+                code: 201,
+                message: "방이 정상적으로 잘 만들어졌고, 들어갔습니다."});
+            
+        }  
 
-        return 500;
+        return ({
+            code: 500,
+            error: "failCreateRoom",
+            message: "방 만들기에 실패했습니다"});
 
     } catch (err) {
-        return 500;
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
     }
-};
+}
 
-async function enterRoom (_id, _name) {
+exports.roomVisitor = async (id, roomname) => {
     try {
-        let targetroom = await Room.findOne({where : {name: _name}})
-        if(targetroom == null) {
-            console.log("방 이름 못찾음");
-            return 404;      
+
+        let room = await Room.findOne({where : {name: roomname}})
+        if(room == null) {
+            return ({
+                code: 404,
+                error: 'notFoundRoom',
+                message: '없는 방 이름입니다.'});      
         }
 
         let isUpdated = await User.update({
-            myroom: targetroom.id,
+            myroom: room.id,
         }, {
-            where: {id: _id},
+            where: {id: id},
         });
 
-        if(isUpdated == 0) {
-            return 400;
+        if(isUpdated == 1) {
+            return ({
+                code: 200,
+                message: "방이 정상적으로 들어갔습니다."});
+        } else {
+            return ({
+                code: 400,
+                error: 'isDone',
+                message: '이미 방에 들어와 있는 상태입니다.'});
         }
 
-        return 200;
-
     } catch (err) {
-        return 500;
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
     }
 }
 
-async function destroyRoom (_id) {
+exports.roomDestroyer = async (id) => {
     try {
-        const user = await User.findOne({where : {id: _id}});
-        console.log(user);
+        const user = await User.findOne({where : {id: id}});
         const roomid = user.myroom;
-        console.log(roomid);
         
         if(roomid == null) {
-            return 404;
+            return ({
+                code: 404,
+                error: 'notFoundRoom',
+                message: '없는 방 이름입니다.'});  
         }
 
-        Room.destroy({
-            where: {
-                id: roomid
-            }
-        });
-        
-        return 200;
+        Room.destroy({where: {id: roomid}});
+
+        return ({
+            code: 200,
+            message: '방을 성공적으로 없애고, 나갔습니다.'});  
 
     } catch (err) {
-        return 500;
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
     }
 }
 
-async function leaveRoom (_id) {
+exports.roomLeaver = async (id) => {
     try {
         let isUpdated = await User.update({
             myroom: null,
         }, {
-            where: {id: _id},
+            where: {id: id},
         });
 
-        if(isUpdated == 0) {
-            return 404;
+        if(isUpdated == 1) {
+            return ({
+                code: 200,
+                message: "방에서 나갔습니다."});
+
+        } else {
+            return ({
+                code: 400,
+                error: 'isDone',
+                message: '이미 방에 나왔습니다.'});
         }
 
-        return 200;
-
     } catch (err) {
-        return 500;
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
     }
 }
 
-exports.roomMaker = async (req, res) => {
+exports.roomList = async (req, res) => {
     try {
-        // userid, roomname
-        const {userid, roomname} = req.body;
-
-        let createRoomCode = await createRoom(roomname);
-        switch (createRoomCode) {
-            case 201:
-                break;
-            case 400:
-                return res.status(400).json({
-                    code: 400,
-                    error: 'repeatedRoomname',
-                    message: '이미 존재하는 방 이름입니다.',
-                });
-            case 500:
-                return res.status(500).send("예상치 못한 오류입니다! ");
-        }
-
-        let enterRoomCode = await enterRoom(userid, roomname);
-        switch (enterRoomCode) {
-            case 200:
-                return res.status(201).send("방이 정상적으로 만들어지고, 방에 정상적으로 진입했습니다.");
-            case 400:
-                return res.status(400).json({
-                    code: 400,
-                    error: 'isDone',
-                    message: '이미 방에 들어와 있는 상태입니다.',
-                });
-            case 404:
-                return res.status(404).json({
-                    code: 404,
-                    error: 'notFoundRoom',
-                    message: '존재하지 않는 방입니다.',
-                });
-            case 500:
-                return res.status(500).send("예상치 못한 오류입니다! ");
-        }
-
-        Room.destroy({
-            where: {name: roomname},
+        const user = await User.findOne({
+            attributes: ["id", "email", "nickname"],
+            where: {
+                id: req.decoded.id,
+            },
         });
-        return res.status(500).send("예상치 못한 오류입니다! ");
 
-    } catch (err) {
-        return res.status(500).send("예상치 못한 오류입니다! "+err);
-    }
-}
-
-exports.roomVisiter = async (req, res) => {
-    try {
-        // userid, roomname
-        const {userid, roomname} = req.body;
-
-        let enterRoomCode = await enterRoom(userid, roomname);
-        switch (enterRoomCode) {
-            case 200:
-                return res.status(200).send("방에 정상적으로 진입했습니다.");
-            case 400:
-                return res.status(400).json({
-                    code: 400,
-                    error: 'isDone',
-                    message: '이미 방에 들어와 있는 상태입니다.',
-                });
-            case 404:
-                return res.status(404).json({
-                    code: 404,
-                    error: 'notFoundRoom',
-                    message: '존재하지 않는 방입니다.',
-                });
-            case 500:
-                return res.status(500).send("예상치 못한 오류입니다! ");
+        if(user) {
+            return res.status(200).json({
+                description: "회원정보",
+                content: user,
+            });
         }
-
-        return res.status(500).send("예상치 못한 오류입니다! ");
-
-    } catch (err) {
-        return res.status(500).send("예상치 못한 오류입니다! "+err);
-    }
-}
-
-exports.roomDestroyer = async (req, res) => {
-    try {
-        // userid
-        const {userid} = req.body;
-
-        let destroyRoomCode = await destroyRoom(userid);
-        switch (destroyRoomCode) {
-            case 200:
-                return res.status(200).send("방을 없애고, 정상적으로 방에서 나갔습니다.");
-            case 404:
-                return res.status(404).json({
-                    code: 404,
-                    error: 'isDone',
-                    message: '방에 들어가 있지 않습니다.',
-                });
-            case 500:
-                return res.status(500).send("예상치 못한 오류입니다! ");
-        }
-
-        return res.status(500).send("예상치 못한 오류입니다! ");
-
-    } catch (err) {
-        return res.status(500).send("예상치 못한 오류입니다! "+err);
-    }
-}
-
-exports.roomLeaver = async (req, res) => {
-    try {
-        // userid
-        const {userid} = req.body;
-
-        let leaveRoomCode = await leaveRoom(userid);
-        switch (leaveRoomCode) {
-            case 200:
-                return res.status(200).send("방을 정상적으로 나갔습니다.");
-            case 404:
-                return res.status(404).json({
-                    code: 404,
-                    error: 'isDone',
-                    message: '방에 들어가 있지 않습니다.',
-                });
-            case 500:
-                return res.status(500).send("예상치 못한 오류입니다! ");
-        }
-
-        return res.status(500).send("예상치 못한 오류입니다! ");
-
     } catch (err) {
         return res.status(500).send("예상치 못한 오류입니다! "+err);
     }
