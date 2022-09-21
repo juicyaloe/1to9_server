@@ -218,7 +218,12 @@ module.exports = (server) => {
 
     ws.interval = setInterval(() => { // 3초마다 클라이언트로 메시지 전송
       if (ws.readyState === ws.OPEN) {
-        ws.send(ws.user);
+
+        let mainResponseJson = {
+          type: "test",
+          body: ws.user,
+        };
+        ws.send(JSON.stringify(mainResponseJson));
       }
     }, 3000);
   });
