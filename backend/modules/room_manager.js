@@ -134,19 +134,32 @@ exports.roomLeaver = async (id) => {
 
 exports.roomList = async (req, res) => {
     try {
-        const user = await User.findOne({
-            attributes: ["id", "email", "nickname"],
+        const rooms = await Room.findAll({})
+
+        return res.status(200).json({
+            description: "방 목록",
+            content: rooms,
+        });
+    } catch (err) {
+        return res.status(500).send("예상치 못한 오류입니다! "+err);
+    }
+}
+
+exports.roomMember = async (req, res) => {
+    try {
+        const roomid = req.params.roomid;
+
+        const users = await User.findAll({
+            attributes: ['id', 'email', 'nickname'],
             where: {
-                id: req.decoded.id,
+              myroom: Number(roomid),
             },
         });
 
-        if(user) {
-            return res.status(200).json({
-                description: "회원정보",
-                content: user,
-            });
-        }
+        return res.status(200).json({
+            description: "방 참여자",
+            content: users,
+        });
     } catch (err) {
         return res.status(500).send("예상치 못한 오류입니다! "+err);
     }

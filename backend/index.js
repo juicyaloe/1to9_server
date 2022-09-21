@@ -16,6 +16,7 @@ const webSocket = require('./socket');
 
 const indexRouter = require('./routes');
 const profileRouter = require('./routes/profile');
+const roomRouter = require('./routes/room');
 
 // const passportConfig = require('./passport');
 
@@ -54,6 +55,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // routes
 app.use('/api/profile', profileRouter);
+app.use('/api/room', roomRouter);
 app.use('/api', indexRouter);
 
 
