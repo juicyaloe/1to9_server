@@ -7,7 +7,10 @@ const router = express.Router();
 router.route('/all')
     .get( roomList );
 
-router.route('/:roomid')
+router.route('/id/:roomid')
+    .get( roomMember );
+
+router.route('/name/:roomname')
     .get( roomMember );
 
 

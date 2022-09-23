@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const { json } = require('sequelize');
 
-const {roomMaker, roomVisitor, roomDestroyer, roomLeaver} = require('./modules/room_manager');
+const {roomCreater, roomVisitor, roomLeaver} = require('./modules/room_manager');
 const User = require("./models/user");
 const Room = require("./models/room");
 
@@ -41,9 +41,9 @@ module.exports = (server) => {
           let id = json.body.id;
           let roomname = json.body.roomname;
 
-          let returnMessage = await roomMaker(id, roomname);
+          let returnMessage = await roomCreater(id, roomname);
           let mainResponseJson = {
-            type: "roomMake",
+            type: "roomCreate",
             body: returnMessage,
           };
           let mainResponse = JSON.stringify(mainResponseJson);
@@ -56,11 +56,11 @@ module.exports = (server) => {
           let noticeResponse = JSON.stringify(noticeResponseJson);
 
           wss.clients.forEach((client) => {
-            if (client.readyState === client.OPEN && mainResponseJson.body.code === 201 && client.id !== id) {
+            if (client.readyState === client.OPEN && mainResponseJson.body.code === 201 && client.id !== ws.id) {
               client.send(noticeResponse);
             }
 
-            if (client.readyState === client.OPEN && client.id === id) {
+            if (client.readyState === client.OPEN && client.id === ws.id) {
               client.send(mainResponse);
             }
           });
@@ -76,12 +76,12 @@ module.exports = (server) => {
             body: returnMessage,
           };
 
-          let mainResponse = JSON.stringify(responseJson);
+          let mainResponse = JSON.stringify(mainResponseJson);
           console.log(mainResponse);
 
           // notice 부분
           let noticeResponseJson = {
-            type: "roomMemberUpdate"
+            type: "roomMemeberUpdate"
           }
           let noticeResponse = JSON.stringify(noticeResponseJson);
 
@@ -97,57 +97,11 @@ module.exports = (server) => {
           room.Users.forEach((user) => {
             wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
               if (client.id === user.id) {
-                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200 && client.id !== id) {
+                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200 && client.id !== ws.id) {
                   client.send(noticeResponse);
                 }
       
-                if (client.readyState === client.OPEN && client.id === id) {
-                  client.send(mainResponse);
-                }
-              }
-            });
-          });
-        }
-        else if(json.type == "destroyRoom") {
-          // db 적용 부분
-          let id = json.body.id;
-
-          // null 오류 있음
-          const user = await User.findOne({
-            where: {id: id}
-          })
-          const room = await Room.findOne({
-            include: [{
-              model: User,
-            }],
-            where: {
-              id: user.myroom,
-            },
-          });
-
-          let returnMessage = await roomDestroyer(id);
-          let mainResponseJson = {
-            type: "roomDestroy",
-            body: returnMessage,
-          };
-
-          let mainResponse = JSON.stringify(mainResponseJson);
-          console.log(mainResponse);
-
-          // notice 부분
-          let noticeResponseJson = {
-            type: "roomDestroyNotice"
-          }
-          let noticeResponse = JSON.stringify(noticeResponseJson);
-     
-          room.Users.forEach((user) => {
-            wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
-              if (client.id === user.id) {
-                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200 && client.id !== id) {
-                  client.send(noticeResponse);
-                }
-      
-                if (client.readyState === client.OPEN && client.id === id) {
+                if (client.readyState === client.OPEN && client.id === ws.id) {
                   client.send(mainResponse);
                 }
               }
@@ -156,22 +110,9 @@ module.exports = (server) => {
         }
         else if(json.type == "leaveRoom") {
           let id = json.body.id;
+          let roomname = json.body.roomname;
 
-          // null 오류 있음
-          const user = await User.findOne({
-            where: {id: id}
-          })
-          const room = await Room.findOne({
-            include: [{
-              model: User,
-            }],
-            where: {
-              id: user.myroom,
-            },
-          });
-          console.log(room.id);
-
-          let returnMessage = await roomLeaver(id);
+          let returnMessage = await roomLeaver(id, roomname);
           let mainResponseJson = {
             type: "roomLeave",
             body: returnMessage,
@@ -179,29 +120,83 @@ module.exports = (server) => {
 
           let mainResponse = JSON.stringify(mainResponseJson);
           console.log(mainResponse);
+   
+          if (mainResponseJson.body.code === 200 || mainResponseJson.body.code === 202)
+          {
+            // notice 부분
+            let noticeResponseJson = {
+              type: "roomMemeberUpdate"
+            }
+            let noticeResponse = JSON.stringify(noticeResponseJson);
 
-          // notice 부분
-          let noticeResponseJson = {
-            type: "roomLeaveNotice"
-          }
-          let noticeResponse = JSON.stringify(noticeResponseJson);
-        
-          room.Users.forEach((user) => {
-            wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
-              if (client.id === user.id) {
-                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200 && client.id !== id) {
-                  client.send(noticeResponse);
-                }
-    
-                if (client.readyState === client.OPEN && client.id === id) {
-                  client.send(mainResponse);
-                }
+            const room = await Room.findOne({
+              include: [{
+                model: User,
+              }],
+              where: {
+                name: roomname,
+              },
+            });
+
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
               }
             });
-          });
+
+            room.Users.forEach((user) => {
+              wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+                if (client.id === user.id) {
+                  if (client.readyState === client.OPEN && client.id !== ws.id) {
+                    client.send(noticeResponse);
+                  }
+                }
+              });
+            });
+          }
+          else if (mainResponseJson.body.code === 204)
+          {
+            // notice 부분
+            let noticeResponseJson = {
+              type: "roomUpdate"
+            }
+            let noticeResponse = JSON.stringify(noticeResponseJson);
+
+            wss.clients.forEach((client) => { // 모든 사람에게
+              if (client.readyState === client.OPEN && client.id !== ws.id) {
+                client.send(noticeResponse);
+              }
+      
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+          }
+          else
+          {
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+          }       
         }
+        // else {
+        // 
+        // }
+
       } catch (err) {
-        
+        let mainResponseJson = {
+          type: "messageError",
+          body: err
+        };
+        let mainResponse = JSON.stringify(mainResponseJson);
+
+        wss.clients.forEach((client) => { // 나에게
+          if (client.readyState === client.OPEN && client.id === ws.id) {
+            client.send(mainResponse);
+          }
+        });
       }
     });
 

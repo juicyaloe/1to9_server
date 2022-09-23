@@ -3,9 +3,9 @@ const User = require('../models/user');
 
 const router = express.Router();
 
-const {roomMaker, roomVisiter, roomLeaver, roomDestroyer} = require('../modules/room_manager');
+const {roomCreater, roomVisiter, roomLeaver} = require('../modules/room_manager');
 
 router.route('/')
-    .post( roomDestroyer );
+    //.post(roomCreater);
 
 module.exports = router;
