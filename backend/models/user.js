@@ -36,6 +36,6 @@ module.exports = class User extends Sequelize.Model {
   }
 
   static associate(db) {
-    db.User.belongsTo(db.Room, {foreignKey: 'myroom', targetKey: 'id'})
+    db.User.belongsTo(db.Room, {foreignKey: 'myroomid', targetKey: 'id'})
   }
 };
