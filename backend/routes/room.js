@@ -1,17 +1,18 @@
 const express = require('express');
 const User = require('../models/user');
 const {roomList, roomMember} = require('../modules/room_manager');
+const {verifyToken} = require('../modules/token_manager');
 
 const router = express.Router();
 
 router.route('/all')
-    .get( roomList );
+    .get( verifyToken, roomList );
 
 router.route('/id/:roomid')
-    .get( roomMember );
+    .get( verifyToken, roomMember );
 
 router.route('/name/:roomname')
-    .get( roomMember );
+    .get( verifyToken, roomMember );
 
 
 module.exports = router;
