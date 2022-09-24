@@ -56,7 +56,7 @@ module.exports = (server) => {
           let noticeResponse = JSON.stringify(noticeResponseJson);
 
           wss.clients.forEach((client) => {
-            if (client.readyState === client.OPEN && mainResponseJson.body.code === 201 && client.id !== ws.id) {
+            if (client.readyState === client.OPEN && mainResponseJson.body.code === 201) {
               client.send(noticeResponse);
             }
 
@@ -81,7 +81,7 @@ module.exports = (server) => {
 
           // notice 부분
           let noticeResponseJson = {
-            type: "roomMemeberUpdate"
+            type: "roomMemberUpdate"
           }
           let noticeResponse = JSON.stringify(noticeResponseJson);
 
@@ -94,19 +94,21 @@ module.exports = (server) => {
             },
           });
           
-          room.Users.forEach((user) => {
-            wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+          wss.clients.forEach((client) => {
+            room.Users.forEach((user) => {  // 이 방에 있는 사람들
               if (client.id === user.id) {
-                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200 && client.id !== ws.id) {
+                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200) {
                   client.send(noticeResponse);
-                }
-      
-                if (client.readyState === client.OPEN && client.id === ws.id) {
-                  client.send(mainResponse);
-                }
+                }   
               }
             });
+
+            if (client.readyState === client.OPEN && client.id === ws.id) {
+              client.send(mainResponse);
+            }
           });
+
+          
         }
         else if(json.type == "leaveRoom") {
           let id = json.body.id;
@@ -125,7 +127,7 @@ module.exports = (server) => {
           {
             // notice 부분
             let noticeResponseJson = {
-              type: "roomMemeberUpdate"
+              type: "roomMemberUpdate"
             }
             let noticeResponse = JSON.stringify(noticeResponseJson);
 
@@ -147,7 +149,7 @@ module.exports = (server) => {
             room.Users.forEach((user) => {
               wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
                 if (client.id === user.id) {
-                  if (client.readyState === client.OPEN && client.id !== ws.id) {
+                  if (client.readyState === client.OPEN) {
                     client.send(noticeResponse);
                   }
                 }
@@ -163,7 +165,7 @@ module.exports = (server) => {
             let noticeResponse = JSON.stringify(noticeResponseJson);
 
             wss.clients.forEach((client) => { // 모든 사람에게
-              if (client.readyState === client.OPEN && client.id !== ws.id) {
+              if (client.readyState === client.OPEN) {
                 client.send(noticeResponse);
               }
       
