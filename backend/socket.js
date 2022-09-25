@@ -227,6 +227,98 @@ module.exports = (server) => {
             });
           });
         }
+        else if(json.type == "tryStartGame")
+        {
+          let roomname = json.body.roomname;
+
+          let returnMessage = await gameStart(roomname);
+          let mainResponseJson = {
+            type: "gameStartTry",
+            body: returnMessage,
+          };
+
+          let mainResponse = JSON.stringify(mainResponseJson);
+          console.log(mainResponse);
+
+          if (mainResponseJson.body.code === 201)
+          { // 사용자: main, 같은 방 사람: 게임 시작
+            // notice 부분
+            let noticeResponseJson = {
+              type: "gameStart",
+              body: mainResponseJson.body.gameroomid
+            }
+            let noticeResponse = JSON.stringify(noticeResponseJson);
+
+            const room = await Room.findOne({
+              include: [{
+                model: User,
+              }],
+              where: {
+                name: roomname,
+              },
+            });
+
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+
+            room.Users.forEach((user) => {
+              wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+                if (client.id === user.id) {
+                  if (client.readyState === client.OPEN && client.id !== ws.id) {
+                    client.send(noticeResponse);
+                  }
+                }
+              });
+            });
+          }
+          else if(mainResponseJson.body.code === 400)
+          {
+            if(mainResponse.body.error == "noReady")
+            {
+              let noticeResponseJson = {
+                type: "pleaseReady",
+              }
+              let noticeResponse = JSON.stringify(noticeResponseJson);
+  
+              const room = await Room.findOne({
+                include: [{
+                  model: User,
+                }],
+                where: {
+                  name: roomname,
+                },
+              });
+  
+              room.Users.forEach((user) => {
+                wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+                  if (client.id === user.id) {
+                    if (client.readyState === client.OPEN && client.id !== ws.id) {
+                      client.send(noticeResponse);
+                    }
+                  }
+                });
+              });
+            }
+            
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+          }
+          else
+          {
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+          }
+
+        }
 
       } catch (err) {
         let mainResponseJson = {

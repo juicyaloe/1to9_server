@@ -25,7 +25,6 @@ exports.changeReady = async (id) => {
             {
                 return ({
                     code: 500,
-                    error: err,
                     message: "예상치 못한 오류입니다! "});
             }
         }
@@ -48,7 +47,6 @@ exports.changeReady = async (id) => {
             {
                 return ({
                     code: 500,
-                    error: err,
                     message: "예상치 못한 오류입니다! "});
             }
         }
@@ -75,7 +73,7 @@ exports.gameStart = async (roomname) => {
         {
             return ({
                 code: 400,
-                error: 'RoomNotFull',
+                error: 'roomNotFull',
                 message: '방이 꽉 차지 않았습니다.'});  
         }
 
@@ -123,15 +121,14 @@ exports.gameStart = async (roomname) => {
 
             return ({
                 code: 500,
-                error: err,
                 message: "예상치 못한 오류입니다! "});
         }
         else
         {
             return ({
-                code: 500,
-                error: err,
-                message: "예상치 못한 오류입니다! "});
+                code: 400,
+                error: 'noReady',
+                message: "전부 준비완료 하지 않았습니다."});
         }
         
     } catch (err) {
