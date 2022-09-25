@@ -226,7 +226,7 @@ exports.roomMember = async (req, res) => {
         }
 
         let users = await User.findAll({
-            attributes: ['id', 'email', 'nickname'],
+            attributes: ['id', 'email', 'nickname', 'isready'],
             where: {
               myroomid: room.id,
             },

@@ -24,8 +24,8 @@ module.exports = class User extends Sequelize.Model {
         allowNull: true,
       },
       isready: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
+        type: Sequelize.INTEGER.UNSIGNED,
+        defaultValue: 0,
       },
     }, {
       sequelize,
