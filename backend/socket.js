@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const { json } = require('sequelize');
 
-const {roomCreater, roomVisitor, roomLeaver} = require('./modules/room_manager');
+const {roomCreater, roomVisitor, roomLeaver, getRoomname} = require('./modules/room_manager');
 const User = require("./models/user");
 const Room = require("./models/room");
 
@@ -208,20 +208,57 @@ module.exports = (server) => {
     });
 
 
-    ws.on('close', () => { // 연결 종료 시
-      console.log('클라이언트 접속 해제', ip);
-      clearInterval(ws.interval);
-    });
+    ws.on('close', async () => { // 연결 종료 시
+      console.log('클라이언트 접속 해제');
 
-    ws.interval = setInterval(() => { // 3초마다 클라이언트로 메시지 전송
-      if (ws.readyState === ws.OPEN) {
+      let tempRes = await getRoomname(ws.id);
+      if (tempRes.code == 200)
+      {
+        let roomname = tempRes.message;
 
-        let mainResponseJson = {
-          type: "test",
-          body: ws.user,
-        };
-        ws.send(JSON.stringify(mainResponseJson));
+        let returnMessage = await roomLeaver(ws.id, roomname);
+
+        if (returnMessage.code === 200 || returnMessage.code === 202)
+        {
+          let noticeResponseJson = {
+            type: "roomMemberUpdate"
+          }
+          let noticeResponse = JSON.stringify(noticeResponseJson);
+
+          const room = await Room.findOne({
+            include: [{
+              model: User,
+            }],
+            where: {
+              name: roomname,
+            },
+          });
+
+          room.Users.forEach((user) => {
+            wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+              if (client.id === user.id) {
+                if (client.readyState === client.OPEN) {
+                  client.send(noticeResponse);
+                }
+              }
+            });
+          });
+        }
+        else if (returnMessage.code === 204)
+        {
+          // notice 부분
+          let noticeResponseJson = {
+            type: "roomUpdate"
+          }
+          let noticeResponse = JSON.stringify(noticeResponseJson);
+
+          wss.clients.forEach((client) => { // 모든 사람에게
+            if (client.readyState === client.OPEN) {
+              client.send(noticeResponse);
+            }
+          });
+        }
       }
-    }, 3000);
+    });
   });
 };

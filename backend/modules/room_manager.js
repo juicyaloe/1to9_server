@@ -145,6 +145,32 @@ exports.roomLeaver = async (id, roomname) => {
     }
 }
 
+exports.getRoomname = async (id) => {
+    try {
+        const user = await User.findOne({where : {id: id}});
+        const room = await Room.findOne({where : {id: user.myroomid}});
+
+        if (room)
+        {
+            return ({
+                code: 200,
+                message: room.name});
+        }
+        else
+        {
+            return ({
+                code: 404,
+                message: ""});
+        }
+
+    } catch (err) {
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
+    }
+}
+
 exports.roomList = async (req, res) => {
     try {
         const rooms = await Room.findAll({})
