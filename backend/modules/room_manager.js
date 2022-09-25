@@ -113,6 +113,7 @@ exports.roomLeaver = async (id, roomname) => {
         
         let isUpdated = await User.update({
             myroomid: null,
+            isready: 0,
         }, {
             where: {id: id},
         });

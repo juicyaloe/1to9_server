@@ -276,7 +276,7 @@ module.exports = (server) => {
           }
           else if(mainResponseJson.body.code === 400)
           {
-            if(mainResponse.body.error == "noReady")
+            if(mainResponseJson.body.error == "noReady")
             {
               let noticeResponseJson = {
                 type: "pleaseReady",
@@ -291,7 +291,7 @@ module.exports = (server) => {
                   name: roomname,
                 },
               });
-  
+
               room.Users.forEach((user) => {
                 wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
                   if (client.id === user.id) {
