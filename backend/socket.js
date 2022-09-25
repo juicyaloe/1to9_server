@@ -56,7 +56,7 @@ module.exports = (server) => {
           let noticeResponse = JSON.stringify(noticeResponseJson);
 
           wss.clients.forEach((client) => {
-            if (client.readyState === client.OPEN && mainResponseJson.body.code === 201) {
+            if (client.readyState === client.OPEN && mainResponseJson.body.code === 201 && client.id !== ws.id) {
               client.send(noticeResponse);
             }
 
@@ -97,7 +97,7 @@ module.exports = (server) => {
           wss.clients.forEach((client) => {
             room.Users.forEach((user) => {  // 이 방에 있는 사람들
               if (client.id === user.id) {
-                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200) {
+                if (client.readyState === client.OPEN && mainResponseJson.body.code === 200 && client.id !== ws.id) {
                   client.send(noticeResponse);
                 }   
               }
@@ -106,9 +106,7 @@ module.exports = (server) => {
             if (client.readyState === client.OPEN && client.id === ws.id) {
               client.send(mainResponse);
             }
-          });
-
-          
+          }); 
         }
         else if(json.type == "leaveRoom") {
           let id = json.body.id;
@@ -149,7 +147,7 @@ module.exports = (server) => {
             room.Users.forEach((user) => {
               wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
                 if (client.id === user.id) {
-                  if (client.readyState === client.OPEN) {
+                  if (client.readyState === client.OPEN && client.id !== ws.id) {
                     client.send(noticeResponse);
                   }
                 }
@@ -165,7 +163,7 @@ module.exports = (server) => {
             let noticeResponse = JSON.stringify(noticeResponseJson);
 
             wss.clients.forEach((client) => { // 모든 사람에게
-              if (client.readyState === client.OPEN) {
+              if (client.readyState === client.OPEN && client.id !== ws.id) {
                 client.send(noticeResponse);
               }
       

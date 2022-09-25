@@ -43,13 +43,21 @@ exports.roomCreater = async (id, roomname) => {
 
 exports.roomVisitor = async (id, roomname) => {
     try {
-
         let room = await Room.findOne({where : {name: roomname}})
         if(room == null) {
             return ({
                 code: 404,
                 error: 'notFoundRoom',
                 message: '없는 방 이름입니다.'});      
+        }
+
+        let users = await room.getUsers()
+        if (users.length >= 2)
+        {
+            return ({
+                code: 403,
+                error: 'RoomFull',
+                message: '방이 꽉 찼습니다.'});  
         }
 
         let isUpdated = await User.update({
