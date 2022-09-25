@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { json } = require('sequelize');
 
 const {roomCreater, roomVisitor, roomLeaver, getRoomname} = require('./modules/room_manager');
+const {changeReady, gameStart} = require('./modules/game_manager');
 const User = require("./models/user");
 const Room = require("./models/room");
 
@@ -181,9 +182,51 @@ module.exports = (server) => {
             });
           }       
         }
-        // else {
-        // 
-        // }
+        else if (json.type == "changeReady")
+        {
+          let id = json.body.id;
+          let roomname = json.body.roomname;
+
+          let returnMessage = await changeReady(id);
+          let mainResponseJson = {
+            type: "readyChange",
+            body: returnMessage,
+          };
+
+          let mainResponse = JSON.stringify(mainResponseJson);
+          console.log(mainResponse);
+
+          // notice 부분
+          let noticeResponseJson = {
+            type: "roomMemberUpdate"
+          }
+          let noticeResponse = JSON.stringify(noticeResponseJson);
+
+          const room = await Room.findOne({
+            include: [{
+              model: User,
+            }],
+            where: {
+              name: roomname,
+            },
+          });
+
+          wss.clients.forEach((client) => { // 나에게
+            if (client.readyState === client.OPEN && client.id === ws.id) {
+              client.send(mainResponse);
+            }
+          });
+
+          room.Users.forEach((user) => {
+            wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+              if (client.id === user.id) {
+                if (client.readyState === client.OPEN && client.id !== ws.id) {
+                  client.send(noticeResponse);
+                }
+              }
+            });
+          });
+        }
 
       } catch (err) {
         let mainResponseJson = {
