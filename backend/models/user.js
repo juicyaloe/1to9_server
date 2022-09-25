@@ -23,6 +23,10 @@ module.exports = class User extends Sequelize.Model {
         type: Sequelize.STRING(100),
         allowNull: true,
       },
+      isready: {
+        type: Sequelize.INTEGER.UNSIGNED,
+        defaultValue: 0,
+      },
     }, {
       sequelize,
       timestamps: false,
@@ -36,6 +40,6 @@ module.exports = class User extends Sequelize.Model {
   }
 
   static associate(db) {
-    db.User.belongsTo(db.Room, {foreignKey: 'myroomid', targetKey: 'id'})
+    db.User.belongsTo(db.Room, {foreignKey: 'myroomid', targetKey: 'id'});
   }
 };

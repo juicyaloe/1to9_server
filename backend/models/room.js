@@ -22,5 +22,6 @@ module.exports = class Room extends Sequelize.Model {
 
   static associate(db) { 
     db.Room.hasMany(db.User, {foreignKey: 'myroomid', sourceKey: 'id'});
+    db.Room.belongsTo(db.Gameroom, {foreignKey: 'gameroomid', targetKey: 'id', onDelete: 'CASCADE'});
   }
 };

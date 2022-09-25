@@ -43,13 +43,21 @@ exports.roomCreater = async (id, roomname) => {
 
 exports.roomVisitor = async (id, roomname) => {
     try {
-
         let room = await Room.findOne({where : {name: roomname}})
         if(room == null) {
             return ({
                 code: 404,
                 error: 'notFoundRoom',
                 message: '없는 방 이름입니다.'});      
+        }
+
+        let users = await room.getUsers()
+        if (users.length >= 2)
+        {
+            return ({
+                code: 403,
+                error: 'RoomFull',
+                message: '방이 꽉 찼습니다.'});  
         }
 
         let isUpdated = await User.update({
@@ -105,6 +113,7 @@ exports.roomLeaver = async (id, roomname) => {
         
         let isUpdated = await User.update({
             myroomid: null,
+            isready: 0,
         }, {
             where: {id: id},
         });
@@ -135,6 +144,32 @@ exports.roomLeaver = async (id, roomname) => {
                 code: 400,
                 error: 'isDone',
                 message: '이미 방에 나왔습니다.'});
+        }
+
+    } catch (err) {
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
+    }
+}
+
+exports.getRoomname = async (id) => {
+    try {
+        const user = await User.findOne({where : {id: id}});
+        const room = await Room.findOne({where : {id: user.myroomid}});
+
+        if (room)
+        {
+            return ({
+                code: 200,
+                message: room.name});
+        }
+        else
+        {
+            return ({
+                code: 404,
+                message: ""});
         }
 
     } catch (err) {
@@ -192,7 +227,7 @@ exports.roomMember = async (req, res) => {
         }
 
         let users = await User.findAll({
-            attributes: ['id', 'email', 'nickname'],
+            attributes: ['id', 'email', 'nickname', 'isready'],
             where: {
               myroomid: room.id,
             },
