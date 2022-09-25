@@ -25,7 +25,7 @@ const app = express();
 app.set('port', process.env.PORT || 8000);
 
 // db connect
-sequelize.sync({ force: false })
+sequelize.sync({ force: true })
   .then(() => {
     console.log('db connect ok');
   })
