@@ -58,11 +58,6 @@ app.use('/api/profile', profileRouter);
 app.use('/api/room', roomRouter);
 app.use('/api', indexRouter);
 
-
-app.use('/a', (req, res) => {
-  res.send("dkss");
-})
-
 app.use((req, res, next) => {
   const error =  new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
   error.status = 404;
