@@ -18,6 +18,14 @@ module.exports = class Gameroom extends Sequelize.Model {
             allowNull: false,
             unique: true,
         },
+        masternumber: {
+          type: Sequelize.INTEGER.UNSIGNED,
+          defaultValue: 0,
+        },
+        membernumber: {
+          type: Sequelize.INTEGER.UNSIGNED,
+          defaultValue: 0,
+        },
     }, {
       sequelize,
       timestamps: false,
