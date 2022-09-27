@@ -3,9 +3,10 @@ const jwt = require('jsonwebtoken');
 const { json } = require('sequelize');
 
 const {roomCreater, roomVisitor, roomLeaver, getRoomname} = require('./modules/room_manager');
-const {changeReady, gameStart} = require('./modules/game_manager');
+const {changeReady, gameStart, gameAction} = require('./modules/game_manager');
 const User = require("./models/user");
 const Room = require("./models/room");
+const Gameroom = require('./models/gameroom');
 
 module.exports = (server) => {
   const wss = new WebSocket.Server({ server });
@@ -245,7 +246,11 @@ module.exports = (server) => {
             // notice 부분
             let noticeResponseJson = {
               type: "gameStart",
-              body: mainResponseJson.body.gameroomid
+              body: {
+                gameroomid: mainResponseJson.body.gameroomid,
+                masterid: mainResponseJson.body.masterid,
+                memberid: mainResponseJson.body.memberid,
+              }
             }
             let noticeResponse = JSON.stringify(noticeResponseJson);
 
@@ -308,6 +313,143 @@ module.exports = (server) => {
                 client.send(mainResponse);
               }
             });
+          }
+          else
+          {
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+          }
+
+        }
+        else if(json.type == "doAction")
+        {
+          let userid = json.body.userid;
+          let gameroomid = json.body.gameroomid;
+          let mynumber = json.body.mynumber;
+
+          let returnMessage = await gameAction(userid, gameroomid, mynumber);
+          let mainResponseJson = {
+            type: "actionDo",
+            body: returnMessage,
+          };
+
+          let mainResponse = JSON.stringify(mainResponseJson);
+          console.log(mainResponse);
+
+          // 201 -> 라운드가 끝났음을 모두에게 공지, 만약 도합 9이면 게임이 끝났음을 모두에게 공지
+          // 200 -> 다른 사람이 제출했다고 상대방에게 공지
+          // 400, 500대 -> 본인에게만 전달 
+
+          const gameroom = await Gameroom.findOne({where : {id: gameroomid}});
+          let gameCount = gameroom.masterwin + gameroom.memberwin + gameroom.draw;
+
+          let anotherMemberid;
+          if (gameroom.masterid == userid)
+          {
+            anotherMemberid = gameroom.memberid;
+          }
+          else
+          {
+            anotherMemberid = gameroom.masterid;
+          }
+
+          if (mainResponseJson.body.code === 200)
+          {
+            let noticeResponseJson = {
+              type: "pleaseAction"
+            }
+            let noticeResponse = JSON.stringify(noticeResponseJson);
+
+            wss.clients.forEach((client) => { // 게임 참여자에게 전송
+              if (client.readyState === client.OPEN && client.id === anotherMemberid) {
+                client.send(noticeResponse);
+              }
+      
+              if (client.readyState === client.OPEN && client.id === ws.id) {
+                client.send(mainResponse);
+              }
+            });
+          }
+          else if(mainResponseJson.body.code === 201)
+          {
+            if(gameCount < 9)
+            {
+              let noticeResponseJson = {
+                type: "nextRound",
+                body: {
+                  [gameroom.masterid]: gameroom.masternumber, 
+                  [gameroom.memberid]: gameroom.membernumber, 
+                  [gameroom.masterid+"win"]: gameroom.masterwin,
+                  [gameroom.memberid+"win"]: gameroom.memberwin,
+                  draw: gameroom.draw,
+                  gamecount: gameCount,
+                  winner: mainResponseJson.body.winner,
+                  sender: ws.id,
+                }
+              }
+              let noticeResponse = JSON.stringify(noticeResponseJson);
+
+              let isGameUpdated = await Gameroom.update({
+                masternumber: 0,
+                membernumber: 0,
+              }, {
+                where: {id: gameroomid},
+              });
+
+              wss.clients.forEach((client) => { // 게임 참여자에게 전송
+                if (client.readyState === client.OPEN && client.id === anotherMemberid) {
+                  client.send(noticeResponse);
+                }
+        
+                if (client.readyState === client.OPEN && client.id === ws.id) {
+                  client.send(noticeResponse);
+                }
+              });
+            }
+            else
+            {
+              let noticeResponseJson = {
+                type: "gameEnd",
+                body: {
+                  [gameroom.masterid]: gameroom.masternumber, 
+                  [gameroom.memberid]: gameroom.membernumber, 
+                  [gameroom.masterid+"win"]: gameroom.masterwin,
+                  [gameroom.memberid+"win"]: gameroom.memberwin,
+                  draw: gameroom.draw,
+                  gamecount: gameCount,
+                  winner: mainResponseJson.body.winner,
+                  sender: ws.id,
+                }
+              }
+              let noticeResponse = JSON.stringify(noticeResponseJson);
+
+              let isDelected = await Gameroom.destroy({where: {id: gameroomid}});
+
+              let isUserReadyUpdated = await User.update({
+                isready: 0,
+              }, {
+                where: {id: userid},
+              });
+
+              let isAnotherUserReadyUpdated = await User.update({
+                isready: 0,
+              }, {
+                where: {id: anotherMemberid},
+              });
+
+              wss.clients.forEach((client) => { // 게임 참여자에게 전송
+                if (client.readyState === client.OPEN && client.id === anotherMemberid) {
+                  client.send(noticeResponse);
+                }
+        
+                if (client.readyState === client.OPEN && client.id === ws.id) {
+                  client.send(noticeResponse);
+                }
+              });
+            }
           }
           else
           {

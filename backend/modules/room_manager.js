@@ -110,15 +110,20 @@ exports.roomLeaver = async (id, roomname) => {
         }
 
         const roomMember = room.Users.length;
-        
-        let isUpdated = await User.update({
-            myroomid: null,
+
+        let isReadyUpdated = await User.update({
             isready: 0,
         }, {
             where: {id: id},
         });
+        
+        let isRoomUpdated = await User.update({
+            myroomid: null,
+        }, {
+            where: {id: id},
+        });
 
-        if(isUpdated == 1) {
+        if(isRoomUpdated == 1) {
 
             if (roomMember == 1) {
                 let isDelected = await Room.destroy({where: {name: roomname}});
