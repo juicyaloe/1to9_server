@@ -346,14 +346,14 @@ module.exports = (server) => {
           const gameroom = await Gameroom.findOne({where : {id: gameroomid}});
           let gameCount = gameroom.masterwin + gameroom.memberwin + gameroom.draw;
 
-          let anotherMember;
+          let anotherMemberid;
           if (gameroom.masterid == userid)
           {
-            anotherMember = gameroom.memberid;
+            anotherMemberid = gameroom.memberid;
           }
           else
           {
-            anotherMember = gameroom.masterid;
+            anotherMemberid = gameroom.masterid;
           }
 
           if (mainResponseJson.body.code === 200)
@@ -364,7 +364,7 @@ module.exports = (server) => {
             let noticeResponse = JSON.stringify(noticeResponseJson);
 
             wss.clients.forEach((client) => { // 게임 참여자에게 전송
-              if (client.readyState === client.OPEN && client.id === anotherMember) {
+              if (client.readyState === client.OPEN && client.id === anotherMemberid) {
                 client.send(noticeResponse);
               }
       
@@ -400,7 +400,7 @@ module.exports = (server) => {
               });
 
               wss.clients.forEach((client) => { // 게임 참여자에게 전송
-                if (client.readyState === client.OPEN && client.id === anotherMember) {
+                if (client.readyState === client.OPEN && client.id === anotherMemberid) {
                   client.send(noticeResponse);
                 }
         
@@ -424,18 +424,24 @@ module.exports = (server) => {
                   sender: ws.id,
                 }
               }
-
               let noticeResponse = JSON.stringify(noticeResponseJson);
 
-              let isGameUpdated = await Gameroom.update({
-                masternumber: 0,
-                membernumber: 0,
+              let isDelected = await Gameroom.destroy({where: {id: gameroomid}});
+
+              let isUserReadyUpdated = await User.update({
+                isready: 0,
               }, {
-                where: {id: gameroomid},
+                where: {id: userid},
+              });
+
+              let isAnotherUserReadyUpdated = await User.update({
+                isready: 0,
+              }, {
+                where: {id: anotherMemberid},
               });
 
               wss.clients.forEach((client) => { // 게임 참여자에게 전송
-                if (client.readyState === client.OPEN && client.id === anotherMember) {
+                if (client.readyState === client.OPEN && client.id === anotherMemberid) {
                   client.send(noticeResponse);
                 }
         
