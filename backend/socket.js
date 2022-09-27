@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { json } = require('sequelize');
 
 const {roomCreater, roomVisitor, roomLeaver, getRoomname} = require('./modules/room_manager');
-const {changeReady, gameStart, gameAction} = require('./modules/game_manager');
+const {changeReady, gameStart, gameAction, getGameRoomname} = require('./modules/game_manager');
 const User = require("./models/user");
 const Room = require("./models/room");
 const Gameroom = require('./models/gameroom');
@@ -297,10 +297,13 @@ module.exports = (server) => {
                 },
               });
 
-              room.Users.forEach((user) => {
+              room.Users.forEach(async (user) => {
+
+                let target_user = await User.findOne({where: {id: user.id}});
+
                 wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
                   if (client.id === user.id) {
-                    if (client.readyState === client.OPEN && client.id !== ws.id) {
+                    if (client.readyState === client.OPEN && target_user.isready == 0) {
                       client.send(noticeResponse);
                     }
                   }
@@ -483,56 +486,106 @@ module.exports = (server) => {
     });
 
 
-    ws.on('close', async () => { // 연결 종료 시
-      console.log('클라이언트 접속 해제');
+    ws.on('close', async (code) => { // 연결 종료 시
+      try {
+        console.log('클라이언트 접속 해제');
+        
+        if (code == 3000) {
+          console.log('다시 접속합니다.');
+          return;
+        }
 
-      let tempRes = await getRoomname(ws.id);
-      if (tempRes.code == 200)
-      {
-        let roomname = tempRes.message;
-
-        let returnMessage = await roomLeaver(ws.id, roomname);
-
-        if (returnMessage.code === 200 || returnMessage.code === 202)
+        let tempRoomRes = await getRoomname(ws.id);
+        if (tempRoomRes.code == 200)
         {
-          let noticeResponseJson = {
-            type: "roomMemberUpdate"
+          let tempGameRes = await getGameRoomname(tempRoomRes.message);
+          if (tempGameRes.code == 200)
+          {
+            // 게임룸을 없애고, 게임 방에 있는 사람에게 알려주기
+
+            let noticeResponseJson = {
+              type: "gameRoomDestroyed"
+            }
+            let noticeResponse = JSON.stringify(noticeResponseJson);
+
+            let gameroom = await Gameroom.findOne({where: {id: tempGameRes.message}});
+            let isDelected = await Gameroom.destroy({where: {id: tempGameRes.message}});  
+            
+            let isUserReadyUpdated = await User.update({
+              isready: 0,
+            }, {
+              where: {id: gameroom.masterid},
+            });
+
+            let isAnotherUserReadyUpdated = await User.update({
+              isready: 0,
+            }, {
+              where: {id: gameroom.memberid},
+            });
+
+            wss.clients.forEach((client) => { // 나에게
+              if (client.readyState === client.OPEN && client.id !== ws.id && client.id === gameroom.masterid) {
+                client.send(noticeResponse);
+              }
+
+              if (client.readyState === client.OPEN && client.id !== ws.id && client.id === gameroom.memberid) {
+                client.send(noticeResponse);
+              }
+            });
           }
-          let noticeResponse = JSON.stringify(noticeResponseJson);
+          else
+          {
+            // 방을 나가거나, 방을 없애기
 
-          const room = await Room.findOne({
-            include: [{
-              model: User,
-            }],
-            where: {
-              name: roomname,
-            },
-          });
+            let roomname = tempRoomRes.message;
+            let returnMessage = await roomLeaver(ws.id, roomname);
 
-          room.Users.forEach((user) => {
-            wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
-              if (client.id === user.id) {
+            if (returnMessage.code === 200 || returnMessage.code === 202)
+            {
+              let noticeResponseJson = {
+              type: "roomMemberUpdate"
+              }
+              let noticeResponse = JSON.stringify(noticeResponseJson);
+
+              const room = await Room.findOne({
+                include: [{
+                  model: User,
+                }],
+                where: {
+                  name: roomname,
+                },
+              });
+
+              room.Users.forEach((user) => {
+                wss.clients.forEach((client) => { // 이 방에 있는 사람들 중
+                  if (client.id === user.id) {
+                    if (client.readyState === client.OPEN) {
+                      client.send(noticeResponse);
+                    }
+                  }
+                });
+              });
+            }
+            else if (returnMessage.code === 204)
+            {
+              // notice 부분
+              let noticeResponseJson = {
+                type: "roomUpdate"
+              }
+              let noticeResponse = JSON.stringify(noticeResponseJson);
+
+              wss.clients.forEach((client) => { // 모든 사람에게
                 if (client.readyState === client.OPEN) {
                   client.send(noticeResponse);
                 }
-              }
-            });
-          });
+              });
+            } 
+          }       
         }
-        else if (returnMessage.code === 204)
-        {
-          // notice 부분
-          let noticeResponseJson = {
-            type: "roomUpdate"
-          }
-          let noticeResponse = JSON.stringify(noticeResponseJson);
-
-          wss.clients.forEach((client) => { // 모든 사람에게
-            if (client.readyState === client.OPEN) {
-              client.send(noticeResponse);
-            }
-          });
-        }
+        console.log('클라이언트 접속 해제가 정상적으로 이루어졌습니다.');
+      }
+      catch {
+        console.log('클라이언트 접속 해제가 정상적으로 이루어지지 않았습니다.');
       }
     });
   });

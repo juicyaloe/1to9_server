@@ -329,3 +329,30 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
             message: "예상치 못한 오류입니다! "});
     }
 }
+
+exports.getGameRoomname = async (roomname) => {
+    try {
+        const room = await Room.findOne({where : {name: roomname}});
+        const gameroom = await Gameroom.findOne({where : {id: room.gameroomid}});
+        
+
+        if (gameroom)
+        {
+            return ({
+                code: 200,
+                message: gameroom.id});
+        }
+        else
+        {
+            return ({
+                code: 404,
+                message: ""});
+        }
+
+    } catch (err) {
+        return ({
+            code: 500,
+            error: err,
+            message: "예상치 못한 오류입니다! "});
+    }
+}
