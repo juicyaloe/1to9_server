@@ -34,6 +34,10 @@ module.exports = class Gameroom extends Sequelize.Model {
           type: Sequelize.INTEGER.UNSIGNED,
           defaultValue: 0,
         },
+        draw: {
+          type: Sequelize.INTEGER.UNSIGNED,
+          defaultValue: 0,
+        },
     }, {
       sequelize,
       timestamps: false,
