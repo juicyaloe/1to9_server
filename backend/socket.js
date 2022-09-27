@@ -6,6 +6,7 @@ const {roomCreater, roomVisitor, roomLeaver, getRoomname} = require('./modules/r
 const {changeReady, gameStart, gameAction} = require('./modules/game_manager');
 const User = require("./models/user");
 const Room = require("./models/room");
+const Gameroom = require('./models/gameroom');
 
 module.exports = (server) => {
   const wss = new WebSocket.Server({ server });
@@ -245,7 +246,11 @@ module.exports = (server) => {
             // notice 부분
             let noticeResponseJson = {
               type: "gameStart",
-              body: mainResponseJson.body.gameroomid
+              body: {
+                gameroomid: mainResponseJson.body.gameroomid,
+                masterid: mainResponseJson.body.masterid,
+                memberid: mainResponseJson.body.memberid,
+              }
             }
             let noticeResponse = JSON.stringify(noticeResponseJson);
 
@@ -374,11 +379,25 @@ module.exports = (server) => {
             {
               let noticeResponseJson = {
                 type: "nextRound",
-                [gameroom.masterid]: gameroom.masternumber, 
-                [gameroom.memberid]: gameroom.membernumber, 
-                winner: mainResponseJson.body.winner,
+                body: {
+                  [gameroom.masterid]: gameroom.masternumber, 
+                  [gameroom.memberid]: gameroom.membernumber, 
+                  [gameroom.masterid+"win"]: gameroom.masterwin,
+                  [gameroom.memberid+"win"]: gameroom.memberwin,
+                  draw: gameroom.draw,
+                  gamecount: gameCount,
+                  winner: mainResponseJson.body.winner,
+                  sender: ws.id,
+                }
               }
               let noticeResponse = JSON.stringify(noticeResponseJson);
+
+              let isGameUpdated = await Gameroom.update({
+                masternumber: 0,
+                membernumber: 0,
+              }, {
+                where: {id: gameroomid},
+              });
 
               wss.clients.forEach((client) => { // 게임 참여자에게 전송
                 if (client.readyState === client.OPEN && client.id === anotherMember) {
@@ -394,11 +413,26 @@ module.exports = (server) => {
             {
               let noticeResponseJson = {
                 type: "gameEnd",
-                [gameroom.masterid]: gameroom.masterwin, 
-                [gameroom.memberid]: gameroom.memberwin, 
+                body: {
+                  [gameroom.masterid]: gameroom.masternumber, 
+                  [gameroom.memberid]: gameroom.membernumber, 
+                  [gameroom.masterid+"win"]: gameroom.masterwin,
+                  [gameroom.memberid+"win"]: gameroom.memberwin,
+                  draw: gameroom.draw,
+                  gamecount: gameCount,
+                  winner: mainResponseJson.body.winner,
+                  sender: ws.id,
+                }
               }
 
               let noticeResponse = JSON.stringify(noticeResponseJson);
+
+              let isGameUpdated = await Gameroom.update({
+                masternumber: 0,
+                membernumber: 0,
+              }, {
+                where: {id: gameroomid},
+              });
 
               wss.clients.forEach((client) => { // 게임 참여자에게 전송
                 if (client.readyState === client.OPEN && client.id === anotherMember) {

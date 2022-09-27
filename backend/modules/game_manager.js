@@ -116,6 +116,8 @@ exports.gameStart = async (roomname) => {
                 return ({
                     code: 201,
                     gameroomid: gameroom.id,
+                    masterid: masterid,
+                    memberid: memberid,
                     message: "게임을 시작했습니다."});
             };
 
@@ -161,7 +163,7 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
                     message: "이미 액션을 진행했습니다."});
             }
 
-            if( masternumber == 0 )
+            if(mynumber == 0 )
             {
                 return ({
                     code: 400,
@@ -194,7 +196,7 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
                     
                     return ({
                         code: 201,
-                        winner: masterid,
+                        winner: gameroom.masterid,
                         message: "라운드가 끝났습니다."});
                 }
                 else if (mynumber < gameroom.membernumber)
@@ -207,7 +209,7 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
 
                     return ({
                         code: 201,
-                        winner: memberid,
+                        winner: gameroom.memberid,
                         message: "라운드가 끝났습니다."});
                 }
                 else
@@ -220,13 +222,14 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
 
                     return ({
                         code: 201,
-                        winner: "none",
+                        winner: "draw",
                         message: "라운드가 끝났습니다."});
                 }
             }
 
             return ({
                 code: 200,
+                mynum: mynumber,
                 message: "숫자가 정상적으로 제출되었습니다."});
 
         }
@@ -240,7 +243,7 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
                     message: "이미 액션을 진행했습니다."});
             }
 
-            if( member == 0 )
+            if(mynumber == 0 )
             {
                 return ({
                     code: 400,
@@ -273,7 +276,7 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
 
                     return ({
                         code: 201,
-                        winner: memberid,
+                        winner: gameroom.memberid,
                         message: "라운드가 끝났습니다."});
                 }
                 else if (mynumber < gameroom.masternumber)
@@ -286,7 +289,7 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
                     
                     return ({
                         code: 201,
-                        winner: masterid,
+                        winner: gameroom.masterid,
                         message: "라운드가 끝났습니다."});   
                 }
                 else
@@ -299,13 +302,14 @@ exports.gameAction = async (userid, gameroomid, mynumber) => {
 
                     return ({
                         code: 201,
-                        winner: "none",
+                        winner: "draw",
                         message: "라운드가 끝났습니다."});
                 }
             }
 
             return ({
                 code: 200,
+                mynum: mynumber,
                 message: "숫자가 정상적으로 제출되었습니다."});
 
         }
