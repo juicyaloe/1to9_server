@@ -1,4 +1,4 @@
-# 1to9_server
+# 1to9 server
 
 ### using stack:
 - express, ws
