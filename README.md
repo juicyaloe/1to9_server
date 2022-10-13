@@ -1,3 +1,4 @@
-# 1-9 게임 서버 코드입니다.
+# 1to9_server
 
-node.js + ws 모듈을 통해서 구현했습니다.
+### using stack:
+- express, ws
